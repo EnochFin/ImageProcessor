@@ -1,0 +1,65 @@
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <FrameLayout
+        android:id="@+id/camera_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:layout_width="193dp"
+            android:layout_height="398dp"
+            android:id="@+id/processedImage"
+            android:layout_gravity="right|center_vertical" />
+
+        <TextureView
+            android:layout_width="193dp"
+            android:layout_height="398dp"
+            android:id="@+id/textureView"
+            android:layout_gravity="left|center_vertical" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Begin"
+            android:id="@+id/buttonStart"
+            android:layout_below="@+id/editText"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:onClick="onClickStart"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="Small Text"
+            android:id="@+id/direction"
+            android:layout_gravity="center_horizontal|top" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="Small Text"
+            android:id="@+id/blackCounter"
+            android:layout_gravity="center_horizontal|top"
+            android:height="30dp"
+            android:gravity="bottom" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="Small Text"
+            android:id="@+id/avgXView"
+            android:layout_gravity="center_horizontal|top"
+            android:height="45dp"
+            android:gravity="bottom" />
+
+    </FrameLayout>
+
+</FrameLayout>
