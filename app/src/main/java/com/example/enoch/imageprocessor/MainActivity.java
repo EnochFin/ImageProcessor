@@ -68,6 +68,10 @@ public class MainActivity extends AppCompatActivity {
 
     private Size imageSize;
 
+    private final int STOP = 700;
+    private final int SLOW = 500;
+    private final int MEDIUM = 250;
+
     private TextView directionDesc;
     private TextView averageXText;
     private TextView blackCounter;
@@ -124,8 +128,6 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "ERROR in broadcast reciever", Toast.LENGTH_SHORT).show();
             }
         }
-
-        ;
     };
 
     @Override
@@ -146,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
             for (String cameraId : cameraManager.getCameraIdList()) {
                 CameraCharacteristics camCharacteristics = cameraManager.getCameraCharacteristics(cameraId);
                 if (camCharacteristics.get(CameraCharacteristics.LENS_FACING) ==
-                        CameraCharacteristics.LENS_FACING_BACK) {
+                        CameraCharacteristics.LENS_FACING_FRONT) {
                     continue;
                 }
                 StreamConfigurationMap map =
@@ -282,8 +284,6 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
             }
-            String str = "onclick enasdasdd" + keeper + id;
-            Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
         } catch (Exception ex) {
             Toast.makeText(getApplicationContext(), ex.toString(), Toast.LENGTH_LONG).show();
         }
@@ -396,7 +396,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                 //if pixel is close to orange
-                if ((red >= 200) && (green <= red / 2) && (blue <= red / 2)) {
+                if ((red >= 200) && (green <= red * .75) && (blue <= red * .75)) {
                     //mark the xPos in list
                     //the pixel is "orange"
                     yBlackPositions.add(y);
@@ -407,7 +407,7 @@ public class MainActivity extends AppCompatActivity {
 
             //if there are orange dots
             if (yBlackPositions.size() > 0) {
-                if(firstPass) {
+                if (firstPass) {
                     ballYLocation = new Float(yBlackPositions.get(yBlackPositions.size() / 2));
                 } else {
                     ballYLocation = ballYLocation + new Float(yBlackPositions.get(yBlackPositions.size() / 2)) / 2;
@@ -419,72 +419,58 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-
         rgb = img.getPixel(width / 2, height / 2);
         red = (rgb >> 16) & 0x000000FF;
         green = (rgb >> 8) & 0x000000FF;
         blue = (rgb) & 0x000000FF;
 
         directionDesc.setText(red + ":" + green + ":" + blue);
-        img.setPixel(width /2, height /2, Color.rgb(0, 0, 255));
+        img.setPixel(width / 2, height / 2, Color.rgb(0, 0, 255));
 
         for (int y = 0; y < width; y++)
             img.setPixel(y, Math.round(ballYLocation), Color.rgb(255, 255, 255));
         blackCounter.setText(String.valueOf(blackCount));
-        if (blackCount < 650 && blackCount > 0) {
-            if (serialPort != null)
-                try {
-                    if (ballYLocation > width - 30) {
-                        if (currDir != "r") {
-                            serialPort.write(new byte[]{'r'});
-                            currDir = "r";
-                        }
-                        directionDesc.setText(String.valueOf('r' + " :" + ballYLocation));
-                    } else if (ballYLocation < 30) {
-                        if (currDir != "l") {
-                            serialPort.write(new byte[]{'r'});
-                            currDir = "r";
-                        }
-                        directionDesc.setText(String.valueOf('l' + " :" + ballYLocation));
-                    } else {
-                        if (currDir != "f") {
-                            serialPort.write(new byte[]{'f'});
-                            currDir = "f";
-                        }
-                        directionDesc.setText(String.valueOf('f' + ":" + ballYLocation));
+        if (serialPort != null) {
+            try {
+                if (ballYLocation < 30) {
+                    if (currDir != "r") {
+                        serialPort.write(new byte[]{'r'});
+                        currDir = "r";
                     }
-                } catch (Exception e) {
-                    Toast.makeText(getApplicationContext(), "ERROR in onclick", Toast.LENGTH_SHORT);
+                    directionDesc.setText(String.valueOf('r' + " :" + ballYLocation + ":" + width));
+                } else if (ballYLocation > width * 2 - 30) {
+                    if (currDir != "l") {
+                        serialPort.write(new byte[]{'l'});
+                        currDir = "l";
+                    }
+                    directionDesc.setText(String.valueOf('l' + " :" + ballYLocation));
+                } else {
+                    if (currDir != "f") {
+                        serialPort.write(new byte[]{'f'});
+                        currDir = "f";
+                    }
+                    directionDesc.setText(String.valueOf('f' + ":" + ballYLocation));
                 }
+                if (blackCount > STOP) {
+                    serialPort.write(new byte[]{'0'});
+                } else if (blackCount > SLOW) {
+                    serialPort.write(new byte[]{'1'});
+                } else if (blackCount > MEDIUM) {
+                    serialPort.write(new byte[]{'2'});
+                } else {
+                    serialPort.write(new byte[]{'3'});
+                }
+            } catch (Exception e) {
+                Toast.makeText(getApplicationContext(), "ERROR in onclick", Toast.LENGTH_SHORT);
+            }
+        } else {
+            if (currDir != "s") {
+                serialPort.write(new byte[]{'s'});
+                currDir = "s";
+            }
+            directionDesc.setText("s");
         }
         processedImage.setImageBitmap(Bitmap.createScaledBitmap(img, 400, 900, false));
     }
 
-    private int findDenseLoc(Integer[] orangeLocations) {
-        int denseLoc = 0;
-        Integer[] largestSegment = {};
-        int start = orangeLocations[0];
-        ArrayList<Integer> currentSegment = new ArrayList();
-
-        for (int i = 0; i < orangeLocations.length - 1; i++) {
-
-            if (orangeLocations[i + 1] - orangeLocations[i] <= MAX_DENSITY_GAP) {
-                //gap is small enough
-                currentSegment.add(orangeLocations[i]);
-            } else {
-                //gap is too big
-                start = orangeLocations[i + 1];
-                if (currentSegment.size() > largestSegment.length) {
-                    largestSegment = currentSegment.toArray(new Integer[currentSegment.size()]);
-                }
-            }
-        }
-
-        //has 2 elements
-        if (largestSegment.length > 1) {
-            denseLoc = largestSegment[0] + largestSegment[largestSegment.length - 1] / 2;
-        }
-
-        return denseLoc;
-    }
 }
