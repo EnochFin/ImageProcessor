@@ -60,6 +60,29 @@
             android:height="45dp"
             android:gravity="bottom" />
 
+        <CheckBox
+            android:layout_width="121dp"
+            android:layout_height="wrap_content"
+            android:text="Show Dots"
+            android:id="@+id/showDots"
+            android:layout_gravity="right|top" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="Small Text"
+            android:id="@+id/speed"
+            android:layout_gravity="left|bottom" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="Small Text"
+            android:id="@+id/directionDir"
+            android:layout_gravity="center_horizontal|bottom" />
+
     </FrameLayout>
 
 </FrameLayout>

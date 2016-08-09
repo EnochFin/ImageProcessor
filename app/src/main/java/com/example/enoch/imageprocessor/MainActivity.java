@@ -30,12 +30,16 @@ import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ImageView;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,16 +72,23 @@ public class MainActivity extends AppCompatActivity {
 
     private Size imageSize;
 
-    private final int STOP = 700;
-    private final int SLOW = 500;
-    private final int MEDIUM = 250;
+    private final int STOP = 20;
+    private final int SLOW = 15;
+    private final int MEDIUM = 10;
+
+    private final int IMAGE_EDGE_DETECTION_THRESHOLD = 45;
 
     private TextView directionDesc;
     private TextView averageXText;
     private TextView blackCounter;
+    private TextView direction;
+    private TextView speed;
     private ImageView processedImage;
     private TextureView textureView;
+    private CheckBox showDotsRadio;
     private TextureView.SurfaceTextureListener surfaceTextureListener;
+
+    private int orangeTransitionX = 0,  orangeTransitionY = 0, secondOrangeTransitionX = 0, secondOrangeTransitionY = 0;
 
     private static final String ACTION_USB_PERMISSION =
             "com.android.example.USB_PERMISSION";
@@ -88,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
     private final int MAX_DENSITY_GAP = 3;
 
     private String currDir = " ";
+    private int currSpeed = 0;
     private final String RIGHT_CODE = "r";
 
 
@@ -148,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
             for (String cameraId : cameraManager.getCameraIdList()) {
                 CameraCharacteristics camCharacteristics = cameraManager.getCameraCharacteristics(cameraId);
                 if (camCharacteristics.get(CameraCharacteristics.LENS_FACING) ==
-                        CameraCharacteristics.LENS_FACING_FRONT) {
+                        CameraCharacteristics.LENS_FACING_BACK) {
                     continue;
                 }
                 StreamConfigurationMap map =
@@ -248,6 +260,9 @@ public class MainActivity extends AppCompatActivity {
         directionDesc = (TextView) findViewById(R.id.direction);
         blackCounter = (TextView) findViewById(R.id.blackCounter);
         averageXText = (TextView) findViewById(R.id.avgXView);
+        showDotsRadio = (CheckBox) findViewById(R.id.showDots);
+        direction = (TextView) findViewById(R.id.directionDir);
+        speed = (TextView) findViewById(R.id.speed);
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_USB_PERMISSION);
@@ -380,95 +395,130 @@ public class MainActivity extends AppCompatActivity {
         int width = img.getWidth();
 
         Float ballYLocation = 0.0f;
-        int rgb, red = 0, green = 0, blue = 0, blackCount = 0;
+        int RGB, red = 0, green = 0, blue = 0, blackCount = 0;
+        int pRGB, pRed = 0, pGreen = 0, pBlue = 0;
         boolean firstPass = true;
-
-        //for all rows
+        int minOrange = Integer.MAX_VALUE, maxOrange = 0;
         for (int x = 0; x < width; x++) {
-            ArrayList<Integer> yBlackPositions = new ArrayList();
+            ArrayList<Integer> transitionPositions = new ArrayList();
+            pRGB = img.getPixel(x, 0);
             //find orange dots
             //for all pixels in row
-            for (int y = 0; y < height; y++) {
-                rgb = img.getPixel(x, y);
-                red = (rgb >> 16) & 0x000000FF;
-                green = (rgb >> 8) & 0x000000FF;
-                blue = (rgb) & 0x000000FF;
+            for (int y = 1; y < height; y++) {
+                RGB = img.getPixel(x, y);
+                red = (RGB >> 16) & 0x000000FF;
+                green = (RGB >> 8) & 0x000000FF;
+                blue = (RGB) & 0x000000FF;
+                pRed = (pRGB >> 16) & 0x000000FF;
+                pGreen = (pRGB >> 8) & 0x000000FF;
+                pBlue = (pRGB) & 0x000000FF;
 
 
                 //if pixel is close to orange
-                if ((red >= 200) && (green <= red * .75) && (blue <= red * .75)) {
+                if ((red <= pRed - IMAGE_EDGE_DETECTION_THRESHOLD || red >= pRed + IMAGE_EDGE_DETECTION_THRESHOLD) ||
+                        (green <= pGreen - IMAGE_EDGE_DETECTION_THRESHOLD || green >= pGreen + IMAGE_EDGE_DETECTION_THRESHOLD) ||
+                        (blue <= pBlue - IMAGE_EDGE_DETECTION_THRESHOLD || blue >= pBlue + IMAGE_EDGE_DETECTION_THRESHOLD)) {
                     //mark the xPos in list
                     //the pixel is "orange"
-                    yBlackPositions.add(y);
+                    if((red >= 100) && (green <= red * .75) && (blue <= red * .75)) {
+                        if( y < minOrange) {
+                            minOrange = y;
+                            orangeTransitionX = x;
+                            orangeTransitionY = y;
+                        }
+                    } else if((pRed >= 100) && (pGreen <= pRed * .75) && (pBlue <= pRed * .75)) {
+                        if( y > maxOrange) {
+                            maxOrange = y;
+                            secondOrangeTransitionX = x;
+                            secondOrangeTransitionY = y;
+                        }
+                    }
+                    directionDesc.setText(orangeTransitionY + ":" + secondOrangeTransitionY);
+
+                    transitionPositions.add(y);
                     blackCount++;
-                    img.setPixel(x, y, Color.rgb(0, 0, 0));
+                    if(this.showDotsRadio.isChecked()) {
+                        img.setPixel(x, y, Color.rgb(0, 0, 0));
+                        img.setPixel(width / 2, 0, Color.rgb(100, 100, 100));
+                    }
                 }
+                pRGB = RGB;
             }
 
             //if there are orange dots
-            if (yBlackPositions.size() > 0) {
+            if (transitionPositions.size() > 0) {
                 if (firstPass) {
-                    ballYLocation = new Float(yBlackPositions.get(yBlackPositions.size() / 2));
+                    ballYLocation = new Float(transitionPositions.get(transitionPositions.size() / 2));
                 } else {
-                    ballYLocation = ballYLocation + new Float(yBlackPositions.get(yBlackPositions.size() / 2)) / 2;
+                    ballYLocation = ballYLocation + new Float(transitionPositions.get(transitionPositions.size() / 2)) / 2;
                 }
 //                averageXText.setText("no more avg");
-                averageXText.setText(String.valueOf(yBlackPositions.get(0)) + ":" + String.valueOf(yBlackPositions.size()) + ":" + String.valueOf(yBlackPositions.get(yBlackPositions.size() / 2)) + ":" + String.valueOf(yBlackPositions.get(yBlackPositions.size() - 1)));
-            }
+                }
 
         }
 
 
-        rgb = img.getPixel(width / 2, height / 2);
-        red = (rgb >> 16) & 0x000000FF;
-        green = (rgb >> 8) & 0x000000FF;
-        blue = (rgb) & 0x000000FF;
-
-        directionDesc.setText(red + ":" + green + ":" + blue);
+        RGB = img.getPixel(width / 2, height / 2);
+        red = (RGB >> 16) & 0x000000FF;
+        green = (RGB >> 8) & 0x000000FF;
+        blue = (RGB) & 0x000000FF;
+        ballYLocation = (float)((secondOrangeTransitionY + orangeTransitionY) / 2);
+        averageXText.setText(red + "," + green + "," + blue);
+        for(int x = 0; x < width; x++) {
+            img.setPixel(x, orangeTransitionY, Color.rgb(0, 255, 0));
+            img.setPixel(x, secondOrangeTransitionY, Color.rgb(0, 255, 255));
+            if(ballYLocation < height)
+                img.setPixel(x, Math.round(ballYLocation), Color.rgb(255, 0, 255));
+        }
         img.setPixel(width / 2, height / 2, Color.rgb(0, 0, 255));
-
-        for (int y = 0; y < width; y++)
-            img.setPixel(y, Math.round(ballYLocation), Color.rgb(255, 255, 255));
-        blackCounter.setText(String.valueOf(blackCount));
+        blackCounter.setText(String.valueOf(secondOrangeTransitionY - orangeTransitionY));
         if (serialPort != null) {
             try {
-                if (ballYLocation < 30) {
+                if (ballYLocation < height / 5) {
                     if (currDir != "r") {
                         serialPort.write(new byte[]{'r'});
                         currDir = "r";
                     }
-                    directionDesc.setText(String.valueOf('r' + " :" + ballYLocation + ":" + width));
-                } else if (ballYLocation > width * 2 - 30) {
+//                    directionDesc.setText(String.valueOf('r' + " :" + ballYLocation + ":" + width));
+                } else if (ballYLocation > 4 * height / 5) {
                     if (currDir != "l") {
                         serialPort.write(new byte[]{'l'});
                         currDir = "l";
                     }
-                    directionDesc.setText(String.valueOf('l' + " :" + ballYLocation));
+//                    directionDesc.setText(String.valueOf('l' + " :" + ballYLocation));
                 } else {
                     if (currDir != "f") {
                         serialPort.write(new byte[]{'f'});
                         currDir = "f";
                     }
-                    directionDesc.setText(String.valueOf('f' + ":" + ballYLocation));
+//                    directionDesc.setText(String.valueOf('f' + ":" + ballYLocation));
                 }
-                if (blackCount > STOP) {
+                direction.setText(currDir);
+                if (secondOrangeTransitionY - orangeTransitionY > STOP && currSpeed != 0) {
                     serialPort.write(new byte[]{'0'});
-                } else if (blackCount > SLOW) {
+                    currSpeed = 0;
+                } else if (secondOrangeTransitionY - orangeTransitionY > SLOW && currSpeed != 1) {
                     serialPort.write(new byte[]{'1'});
-                } else if (blackCount > MEDIUM) {
+                    currSpeed = 1;
+                } else if (secondOrangeTransitionY - orangeTransitionY > MEDIUM && currSpeed != 2) {
                     serialPort.write(new byte[]{'2'});
-                } else {
+                    currSpeed = 2;
+                } else if(currSpeed != 3){
                     serialPort.write(new byte[]{'3'});
+                    currSpeed = 3;
                 }
+
+                speed.setText(String.valueOf(currSpeed));
+                direction.setText(currDir);
             } catch (Exception e) {
                 Toast.makeText(getApplicationContext(), "ERROR in onclick", Toast.LENGTH_SHORT);
             }
         } else {
-            if (currDir != "s") {
+            if (currDir != "s" && serialPort != null) {
                 serialPort.write(new byte[]{'s'});
                 currDir = "s";
             }
-            directionDesc.setText("s");
+//            directionDesc.setText("s");
         }
         processedImage.setImageBitmap(Bitmap.createScaledBitmap(img, 400, 900, false));
     }
