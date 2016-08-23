@@ -10,18 +10,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ImageView
-            android:layout_width="193dp"
-            android:layout_height="398dp"
-            android:id="@+id/processedImage"
-            android:layout_gravity="right|center_vertical" />
-
-        <TextureView
-            android:layout_width="193dp"
-            android:layout_height="398dp"
-            android:id="@+id/textureView"
-            android:layout_gravity="left|center_vertical" />
-
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -82,6 +70,19 @@
             android:text="Small Text"
             android:id="@+id/directionDir"
             android:layout_gravity="center_horizontal|bottom" />
+
+        <TextureView
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:id="@+id/textureView"
+            android:layout_gravity="center" />
+
+        <ImageView
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:id="@+id/processedImage"
+            android:layout_gravity="center"
+            android:adjustViewBounds="false" />
 
     </FrameLayout>
 

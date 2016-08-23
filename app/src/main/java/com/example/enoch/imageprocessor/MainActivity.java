@@ -476,37 +476,61 @@ public class MainActivity extends AppCompatActivity {
             try {
                 if (ballYLocation < height / 5) {
                     if (currDir != "r") {
-                        serialPort.write(new byte[]{'r'});
                         currDir = "r";
+                        if (secondOrangeTransitionY - orangeTransitionY > STOP && currSpeed != 0) {
+                            serialPort.write(new byte[]{'s'});
+                            currSpeed = 0;
+                        } else if (secondOrangeTransitionY - orangeTransitionY > SLOW && currSpeed != 1) {
+                            serialPort.write(new byte[]{'a'});
+                            currSpeed = 1;
+                        } else if (secondOrangeTransitionY - orangeTransitionY > MEDIUM && currSpeed != 2) {
+                            serialPort.write(new byte[]{'b'});
+                            currSpeed = 2;
+                        } else if(currSpeed != 3){
+                            serialPort.write(new byte[]{'c'});
+                            currSpeed = 3;
+                        }
                     }
 //                    directionDesc.setText(String.valueOf('r' + " :" + ballYLocation + ":" + width));
                 } else if (ballYLocation > 4 * height / 5) {
                     if (currDir != "l") {
-                        serialPort.write(new byte[]{'l'});
                         currDir = "l";
+                        if (secondOrangeTransitionY - orangeTransitionY > STOP && currSpeed != 0) {
+                            serialPort.write(new byte[]{'s'});
+                            currSpeed = 0;
+                        } else if (secondOrangeTransitionY - orangeTransitionY > SLOW && currSpeed != 1) {
+                            serialPort.write(new byte[]{'d'});
+                            currSpeed = 1;
+                        } else if (secondOrangeTransitionY - orangeTransitionY > MEDIUM && currSpeed != 2) {
+                            serialPort.write(new byte[]{'e'});
+                            currSpeed = 2;
+                        } else if(currSpeed != 3){
+                            serialPort.write(new byte[]{'f'});
+                            currSpeed = 3;
+                        }
                     }
 //                    directionDesc.setText(String.valueOf('l' + " :" + ballYLocation));
                 } else {
                     if (currDir != "f") {
-                        serialPort.write(new byte[]{'f'});
                         currDir = "f";
+                        if (secondOrangeTransitionY - orangeTransitionY > STOP && currSpeed != 0) {
+                            serialPort.write(new byte[]{'s'});
+                            currSpeed = 0;
+                        } else if (secondOrangeTransitionY - orangeTransitionY > SLOW && currSpeed != 1) {
+                            serialPort.write(new byte[]{'g'});
+                            currSpeed = 1;
+                        } else if (secondOrangeTransitionY - orangeTransitionY > MEDIUM && currSpeed != 2) {
+                            serialPort.write(new byte[]{'h'});
+                            currSpeed = 2;
+                        } else if(currSpeed != 3){
+                            serialPort.write(new byte[]{'i'});
+                            currSpeed = 3;
+                        }
                     }
 //                    directionDesc.setText(String.valueOf('f' + ":" + ballYLocation));
                 }
                 direction.setText(currDir);
-                if (secondOrangeTransitionY - orangeTransitionY > STOP && currSpeed != 0) {
-                    serialPort.write(new byte[]{'0'});
-                    currSpeed = 0;
-                } else if (secondOrangeTransitionY - orangeTransitionY > SLOW && currSpeed != 1) {
-                    serialPort.write(new byte[]{'1'});
-                    currSpeed = 1;
-                } else if (secondOrangeTransitionY - orangeTransitionY > MEDIUM && currSpeed != 2) {
-                    serialPort.write(new byte[]{'2'});
-                    currSpeed = 2;
-                } else if(currSpeed != 3){
-                    serialPort.write(new byte[]{'3'});
-                    currSpeed = 3;
-                }
+
 
                 speed.setText(String.valueOf(currSpeed));
                 direction.setText(currDir);
@@ -520,7 +544,7 @@ public class MainActivity extends AppCompatActivity {
             }
 //            directionDesc.setText("s");
         }
-        processedImage.setImageBitmap(Bitmap.createScaledBitmap(img, 400, 900, false));
+        processedImage.setImageBitmap(Bitmap.createScaledBitmap(img, 300, 300, false));
     }
 
 }
